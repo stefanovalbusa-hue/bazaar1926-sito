@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carrello · Bazaar dal 1926</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="carrello">
+  <div id="site-header"></div>
+
+  <section>
+    <div class="wrap">
+      <div class="section-title"><span class="kicker">Il tuo ordine</span><h2>Carrello</h2></div>
+      <div class="cart-layout">
+        <div>
+          <div id="items"></div>
+          <div class="panel" id="checkout-panel" style="margin-top:28px">
+            <h3>Dati per la spedizione</h3>
+            <form class="checkout" id="checkout">
+              <div class="two">
+                <label>Nome<input name="nome" maxlength="60" required autocomplete="given-name"></label>
+                <label>Cognome<input name="cognome" maxlength="60" required autocomplete="family-name"></label>
+              </div>
+              <div class="two">
+                <label>Email<input name="email" type="email" maxlength="120" required autocomplete="email"></label>
+                <label>Telefono<input name="telefono" type="tel" maxlength="25" pattern="[0-9 +().-]{6,25}" required autocomplete="tel"></label>
+              </div>
+              <label>Consegna
+                <select name="consegna" id="consegna">
+                  <option value="spedizione">Spedizione a domicilio</option>
+                  <option value="ritiro">Ritiro gratuito in negozio (Bosco Chiesanuova)</option>
+                </select>
+              </label>
+              <div id="addr">
+                <label>Indirizzo<input name="indirizzo" maxlength="120" autocomplete="street-address"></label>
+                <div class="two" style="margin-top:12px">
+                  <label>CAP<input name="cap" maxlength="5" pattern="[0-9]{5}" autocomplete="postal-code"></label>
+                  <label>Città<input name="citta" maxlength="60" autocomplete="address-level2"></label>
+                </div>
+              </div>
+              <label>Note per il negozio<textarea name="note" rows="2" maxlength="500"></textarea></label>
+              <label style="display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--testo)">
+                <input type="checkbox" required style="margin-top:4px"> Ho letto e accetto le <a href="contatti.html#condizioni">condizioni di vendita</a> e l'<a href="privacy.html">informativa privacy</a>.
+              </label>
+            </form>
+          </div>
+        </div>
+        <aside class="summary">
+          <h3>Riepilogo</h3>
+          <div class="row"><span>Subtotale</span><span id="sub">-</span></div>
+          <div class="row"><span>Spedizione</span><span id="ship">-</span></div>
+          <div class="row total"><span>Totale</span><span id="tot">-</span></div>
+          <button class="btn" id="pay" form="checkout" type="submit">Paga con Nexi</button>
+          <p class="note">Pagamento sicuro tramite Nexi XPay: carte di credito, debito, Apple Pay, Google Pay. I dati della carta non transitano sul nostro sito.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="assets/js/app.js"></script>
+  <script>
+    const itemsEl = document.getElementById("items");
+    const consegna = document.getElementById("consegna");
+
+    function draw() {
+      const items = readCart();
+      const ritiro = consegna.value === "ritiro";
+      if (!items.length) {
+        itemsEl.innerHTML = `<div class="empty">Il carrello è vuoto.<br><br><a href="shop.html" class="btn dark">Vai allo shop</a></div>`;
+        document.getElementById("checkout-panel").style.display = "none";
+        document.getElementById("pay").disabled = true;
+      } else {
+        itemsEl.innerHTML = items.map((i, idx) => `
+          <div class="cart-item">
+            <div class="thumb"></div>
+            <div><strong>${esc(i.nome)}</strong><br><span class="note">Taglia ${esc(i.taglia)} · ${euro(i.prezzo)}</span><br>
+              <button class="link-btn" data-rm="${idx}">Rimuovi</button></div>
+            <div style="text-align:right">
+              <div class="qty"><button data-dec="${idx}">−</button><span>${Number(i.qty)}</span><button data-inc="${idx}">+</button></div>
+              <div style="margin-top:6px;font-weight:600">${euro(i.prezzo * i.qty)}</div>
+            </div>
+          </div>`).join("");
+      }
+      const t = cartTotals(items);
+      const ship = ritiro ? 0 : t.spedizione;
+      document.getElementById("sub").textContent = euro(t.subtotale);
+      document.getElementById("ship").textContent = ship ? euro(ship) : "Gratuita";
+      document.getElementById("tot").textContent = euro(t.subtotale + ship);
+      document.getElementById("addr").style.display = ritiro ? "none" : "block";
+      document.querySelectorAll("#addr input").forEach((i) => (i.required = !ritiro));
+    }
+
+    itemsEl.addEventListener("click", async (e) => {
+      const items = readCart();
+      const b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.rm) items.splice(+b.dataset.rm, 1);
+      if (b.dataset.dec) { const i = items[+b.dataset.dec]; i.qty--; if (i.qty <= 0) items.splice(+b.dataset.dec, 1); }
+      if (b.dataset.inc) {
+        const i = items[+b.dataset.inc];
+        const inv = await loadInventory();
+        const p = inv.find((x) => x.sku === i.sku);
+        if (p && i.qty < stockFor(p, i.taglia)) i.qty++; else toast("Quantità massima disponibile raggiunta");
+      }
+      writeCart(items); draw();
+    });
+    consegna.addEventListener("change", draw);
+
+    document.getElementById("checkout").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pay = document.getElementById("pay");
+      pay.disabled = true; pay.textContent = "Reindirizzamento a Nexi...";
+      const cliente = Object.fromEntries(new FormData(e.target));
+      try {
+        const res = await fetch("/.netlify/functions/nexi-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cliente, righe: readCart().map(({ sku, taglia, qty }) => ({ sku, taglia, qty })) }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.action) throw new Error(data.errore || "Pagamenti non ancora attivi in questa versione di prova.");
+        // Form auto-inviato verso la pagina di pagamento ospitata da Nexi
+        const f = document.createElement("form");
+        f.method = "POST"; f.action = data.action;
+        for (const [k, v] of Object.entries(data.campi)) {
+          const inp = document.createElement("input"); inp.type = "hidden"; inp.name = k; inp.value = v; f.appendChild(inp);
+        }
+        document.body.appendChild(f); f.submit();
+      } catch (err) {
+        toast(err instanceof TypeError ? "Pagamenti non ancora attivi in questa versione di prova." : err.message);
+        pay.disabled = false; pay.textContent = "Paga con Nexi";
+      }
+    });
+
+    draw();
+  </script>
+</body>
+</html>

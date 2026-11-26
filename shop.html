@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop · Bazaar dal 1926</title>
+  <meta name="description" content="Acquista online abbigliamento uomo, donna, bambino, outdoor e calzature da Bazaar dal 1926, Bosco Chiesanuova.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="shop">
+  <div id="site-header"></div>
+
+  <section>
+    <div class="wrap">
+      <div class="section-title"><span class="kicker">Shop online</span><h2>I nostri prodotti</h2></div>
+      <div class="toolbar">
+        <div class="filters" id="filters"></div>
+        <input class="search" id="search" type="search" placeholder="Cerca un prodotto...">
+      </div>
+      <div class="grid cols-4" id="products"></div>
+      <p class="note" id="updated" style="text-align:center;margin-top:24px"></p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (async () => {
+      const all = await loadInventory();
+      const cats = ["Tutti", ...new Set(all.map((p) => p.categoria))];
+      let cat = new URLSearchParams(location.search).get("cat") || "Tutti";
+      let q = "";
+      let skuLink = new URLSearchParams(location.search).get("sku");
+      const fEl = document.getElementById("filters");
+      const pEl = document.getElementById("products");
+
+      function draw() {
+        fEl.innerHTML = cats.map((c) => `<button class="chip ${c === cat ? "active" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+        fEl.querySelectorAll(".chip").forEach((b) => b.onclick = () => { cat = b.dataset.c; if (skuLink) { skuLink = null; history.replaceState(null, "", "shop.html"); } draw(); });
+        const list = all
+          .filter((p) => cat === "Tutti" || p.categoria === cat)
+          .filter((p) => !skuLink || p.sku === skuLink)
+          .filter((p) => !q || (p.nome + " " + p.marca).toLowerCase().includes(q))
+          .sort((a, b) => (totalStock(b) > 0) - (totalStock(a) > 0));
+        pEl.innerHTML = list.length ? list.map(productCard).join("") : `<p class="empty">Nessun prodotto trovato.</p>`;
+        bindProductCards(pEl, all);
+      }
+      document.getElementById("search").oninput = (e) => { q = e.target.value.trim().toLowerCase(); draw(); };
+      draw();
+      fetch("data/giacenze.json").then(r => r.ok ? r.json() : {}).catch(() => ({})).then(d => {
+        if (d.aggiornato) document.getElementById("updated").textContent = "Disponibilità aggiornata al " + new Date(d.aggiornato).toLocaleDateString("it-IT");
+      });
+    })();
+  </script>
+</body>
+</html>

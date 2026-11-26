@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Esito ordine · Bazaar dal 1926</title>
+  <meta name="robots" content="noindex">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="esito">
+  <div id="site-header"></div>
+  <section>
+    <div class="wrap" style="max-width:640px;text-align:center">
+      <div class="section-title"><span class="kicker">Ordine</span><h2 id="titolo">Esito del pagamento</h2></div>
+      <p id="msg"></p>
+      <p style="margin-top:28px"><a href="shop.html" class="btn dark">Torna allo shop</a></p>
+    </div>
+  </section>
+  <div id="site-footer"></div>
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Nexi rimanda qui con ?esito=OK|KO&codTrans=... (l'esito definitivo è quello ricevuto lato server su urlpost)
+    const q = new URLSearchParams(location.search);
+    const ok = q.get("esito") === "OK";
+    const annullato = q.get("annullato") === "1";
+    document.getElementById("titolo").textContent = ok ? "Grazie per il tuo ordine!" : annullato ? "Pagamento annullato" : "Pagamento non riuscito";
+    document.getElementById("msg").textContent = ok
+      ? "Il pagamento è andato a buon fine. Riceverai una email di conferma con il numero d'ordine " + (q.get("codTrans") || "") + "."
+      : annullato ? "Hai annullato il pagamento: il carrello è ancora disponibile."
+      : "Il pagamento non è stato completato. Puoi riprovare dal carrello o contattarci al 045 7050167.";
+    if (ok) { try { localStorage.removeItem(CART_KEY); } catch {} }
+  </script>
+</body>
+</html>

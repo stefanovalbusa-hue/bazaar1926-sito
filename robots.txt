@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /carrello.html
+Disallow: /esito.html
