@@ -120,6 +120,7 @@ function renderChrome() {
           <span data-sez="shop">${link("shop.html", "Shop", "shop")}</span>
           <span class="presto-menu"><a href="index.html#presto">Shop <em>coming soon</em></a></span>
           <span data-sez="storia">${link("index.html#storia", "La nostra storia", "storia")}</span>
+          <a href="index.html#marche">Le marche</a>
           <span data-sez="contatti">${link("contatti.html", "Contatti", "contatti")}</span>
         </nav>
         <a href="carrello.html" class="cart-btn" data-sez="acquisti">Carrello<span class="cart-count">0</span></a>

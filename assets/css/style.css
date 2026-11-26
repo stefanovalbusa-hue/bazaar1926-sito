@@ -266,3 +266,16 @@ body.off-shop .presto-menu { display: inline; }
 .testo-legale h2 { color: var(--verde); margin: 8px 0 10px; }
 .testo-legale h3 { color: var(--verde); font-size: 1.2rem; margin: 26px 0 8px; }
 .testo-legale p { margin-bottom: 12px; }
+
+/* Le marche che trattiamo (26/11/2026) */
+.marche { background: #fff; border-top: 1px solid var(--bordo); padding: 64px 0; }
+.marche .section-title { text-align: center; }
+.marche .kicker { color: var(--oro); text-transform: uppercase; letter-spacing: .3em; font-size: .75rem; font-weight: 600; }
+.marche-intro { text-align: center; color: var(--grigio); max-width: 620px; margin: 10px auto 32px; }
+.marche-loghi { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+.marche-loghi li { background: var(--crema); border: 1px solid var(--bordo); border-radius: var(--radius); height: 104px; display: flex; align-items: center; justify-content: center; padding: 18px 20px; }
+.marche-loghi img { max-height: 56px; max-width: 100%; object-fit: contain; }
+.marche-altre { text-align: center; margin-top: 30px; color: #333; line-height: 2; }
+.marche-altre span { display: block; font-family: "Playfair Display", Georgia, serif; color: var(--verde); font-size: 1.15rem; margin-bottom: 4px; }
+.marche-nota { text-align: center; color: var(--grigio); font-size: .75rem; margin-top: 18px; }
+@media (max-width: 600px) { .marche-loghi { grid-template-columns: repeat(2, 1fr); } .marche-loghi li { height: 84px; padding: 12px; } .marche-loghi img { max-height: 44px; } }
